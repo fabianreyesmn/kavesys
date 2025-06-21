@@ -1,5 +1,5 @@
-CREATE DATABASE KAVESys;
-USE KAVESys;
+CREATE DATABASE KAVE_Sys;
+USE KAVE_Sys;
 
 
 /*Tabla de Usuario*/
@@ -25,7 +25,7 @@ CREATE TABLE ProductoInventario (
 ID_Inventario VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
 Descripcion VARCHAR(50) NOT NULL,
-ID_Categoria VARCHAR(10) NULL,
+ID_Categoria VARCHAR(10) NOT NULL,
 ExistenciasMinimas INT,
 ExistenciasMaximas INT,
 CONSTRAINT PK_ProductoInventario PRIMARY KEY(ID_Inventario),

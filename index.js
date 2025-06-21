@@ -1,18 +1,16 @@
-const express = require('express');
-const helmet = require('helmet');
-const app = express();
+const express = require("express"); //Importar la librería express
+const bodyParser = require("body-parser");
+const misrutas = require('./routes/rutas');
 
-require('dotenv').config();
-
+const app = express(); //Crear el servidor
 const port = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.json());
+app.use('/', misrutas);
 
-app.get('/', (req, res) => {
-  res.send('Servidor funcionando');
-});
+
+
 
 app.listen(port, () => {
-  console.log(`Servidor corriendo en http://localhost:${port}`);
-});
-
+    console.log(`Servidor en ejecución http://localhost:${port}`);

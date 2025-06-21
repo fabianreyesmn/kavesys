@@ -1,17 +1,16 @@
 {
-  "name": "kavesys",
+  "name": "kave_sys",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "helmet": "^8.1.0"
+    "nodemon": "^3.1.10"
   }
 }
