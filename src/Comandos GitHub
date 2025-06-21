@@ -1,0 +1,46 @@
+Crear una nueva rama local y cambiar a ella: 
+git checkout -b [Nombre_Rama]
+
+Ver ramas:
+git branch #Locales
+git branch -a #Locales y remotas
+
+Cambiar a una rama existente:
+git checkout [Nombre_Rama]
+
+
+Subir cambios:
+git status #Ver archivos modificados
+git add . #Agregar todos los archivos
+git commit -m "Descripción de los cambios"
+git pull origin [Nombre_Rama] #Obtener los últimos cambios antes de subir
+git push -u origin [Nombre_Rama] #Subir por primera vez la rama local para que sea rama remota, después solo se tiene que hacer: git push porque ya tendrá seguimiento (tracking)
+
+
+Traer cambios de una rama remota:
+git pull origin [Nombre_Rama] #Actualizar rama local con los cambios de la rama remota
+
+Traer cambios sin aplicar automáticamente:
+git fetch #Traer cambios sin aplicarlos
+git merge origin/[Nombre_Rama] #Aplicar los cambios
+git status 
+git add .
+git commit -m "Obteniendo los cambios de la rama remota"
+git push
+
+
+Nota: Si la rama tiene seguimiento (tracking) se pueden obtener los cambios con:
+git pull 
+
+Verificar si una rama tiene seguimiento (tracking):
+git branch -vv
+
+Establecer seguimiento (tracking) a una rama:
+git push -u origin [Nombre_Rama]
+
+
+Fusionar una rama en main:
+git checkout main
+git pull origin main
+git merge [Nombre_Rama] #Resolver conflictos en caso de ser necesario
+git push origin main #Subir los cambios fusionados a GitHub
