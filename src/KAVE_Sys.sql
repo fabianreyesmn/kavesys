@@ -1,5 +1,6 @@
 CREATE DATABASE KAVE_Sys;
 USE KAVE_Sys;
+/*DROP DATABASE KAVE_Sys;*/
 
 
 /*Tabla de Usuario*/
@@ -17,19 +18,28 @@ CONSTRAINT PK_Usuario PRIMARY KEY(ID_Usuario)
 CREATE TABLE Categoria (
 ID_Categoria VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
-CONSTRAINT PK_Categoria PRIMARY KEY(ID_Categoria) 
+ID_CategoriaPadre VARCHAR(10) NULL,
+CONSTRAINT PK_Categoria PRIMARY KEY(ID_Categoria),
+CONSTRAINT FK_Categoria_Categoria FOREIGN KEY (ID_CategoriaPadre) REFERENCES Categoria(ID_Categoria)
 );
 
 /*Tabla Producto del Inventario*/
 CREATE TABLE ProductoInventario (
 ID_Inventario VARCHAR(10),
-Nombre VARCHAR(50) NOT NULL,
 Descripcion VARCHAR(50) NOT NULL,
 ID_Categoria VARCHAR(10) NOT NULL,
-ExistenciasMinimas INT,
-ExistenciasMaximas INT,
 CONSTRAINT PK_ProductoInventario PRIMARY KEY(ID_Inventario),
 CONSTRAINT FK_ProductoInventario_Categoria FOREIGN KEY(ID_Categoria) REFERENCES Categoria(ID_Categoria) 
+);
+
+/*Tabla de Configuración del Producto*/
+CREATE TABLE ConfiguracionProducto (
+ID_ConfiguracionProducto VARCHAR(10),
+ID_Inventario VARCHAR(10),
+ExistenciasMinimas INT NOT NULL,
+ExistenciasMaximas INT NOT NULL,
+CONSTRAINT PK_ConfiguracionProducto PRIMARY KEY(ID_ConfiguracionProducto),
+CONSTRAINT FK_ConfiguracionProducto_ProductoInventario FOREIGN KEY(ID_Inventario) REFERENCES ProductoInventario(ID_Inventario) 
 );
 
 /*Tabla de Movimiento*/
