@@ -109,9 +109,9 @@ CONSTRAINT FK_Proveedor_Localidad FOREIGN KEY(ID_Localidad) REFERENCES Localidad
 
 /*Tabla del Producto Fabricado*/
 CREATE TABLE ProductoFabricado (
-Clave VARCHAR(10),
+Clave VARCHAR(15),
 ID_Inventario VARCHAR(10),
-Piezas INT NULL,
+Piezas INT NOT NULL,
 Precio DECIMAL(10, 2) NOT NULL, 
 Existencias INT NOT NULL, 
 CONSTRAINT PK_ProductoInventario PRIMARY KEY(Clave, ID_Inventario),

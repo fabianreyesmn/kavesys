@@ -10,10 +10,10 @@ git checkout [Nombre_Rama]
 
 
 Subir cambios:
-git status #Ver archivos modificados
+git status #Ver los archivos modificados
 git add . #Agregar todos los archivos
 git commit -m "Descripción de los cambios"
-git pull origin [Nombre_Rama] #Obtener los últimos cambios antes de subir
+git pull origin [Nombre_Rama] #Obtener los últimos cambios antes de subir, ignorar este paso si nunca se ha subido la rama
 git push -u origin [Nombre_Rama] #Subir por primera vez la rama local para que sea rama remota, después solo se tiene que hacer: git push porque ya tendrá seguimiento (tracking)
 
 
