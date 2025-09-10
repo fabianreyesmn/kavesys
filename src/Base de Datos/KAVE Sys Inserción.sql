@@ -675,6 +675,6 @@ WHERE fabricado.ID_Inventario = inventario.ID_Inventario ORDER BY ROUND( SUBSTR(
 
 DESCRIBE Usuario;
 
-INSERT INTO Usuario(ID_Usuario, Nombre, ApellidoPaterno, ApellidoMaterno, CorreoElectronico, Tipo) VALUES ('1', 'Gustavo', 'Avendaño', 'Guevara', 'gusavegue@gmail.com', 'Administrador');
+-- INSERT INTO Usuario(ID_Usuario, Nombre, ApellidoPaterno, ApellidoMaterno, CorreoElectronico, Tipo) VALUES ('1', 'Gustavo', 'Avendaño', 'Guevara', 'gusavegue@gmail.com', 'Administrador');
 
 SELECT * FROM Usuario;

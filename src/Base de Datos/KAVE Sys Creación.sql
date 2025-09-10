@@ -5,12 +5,12 @@ USE KAVE_Sys;
 
 /*Tabla de Usuario*/
 CREATE TABLE Usuario (
-ID_Usuario VARCHAR(10),
-Nombre VARCHAR(50) NOT NULL,
-ApellidoPaterno VARCHAR(50) NOT NULL,
-ApellidoMaterno VARCHAR(50) NOT NULL,
-CorreoElectronico VARCHAR(50) NOT NULL,
-Tipo VARCHAR(50) NOT NULL,
+ID_Usuario VARCHAR(30),
+-- Nombre VARCHAR(50) NOT NULL,
+-- ApellidoPaterno VARCHAR(50) NOT NULL,
+-- ApellidoMaterno VARCHAR(50) NOT NULL,
+-- CorreoElectronico VARCHAR(50) NOT NULL,
+-- Tipo VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Usuario PRIMARY KEY(ID_Usuario) 
 );
 
