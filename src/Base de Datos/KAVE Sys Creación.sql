@@ -1,16 +1,15 @@
 CREATE DATABASE KAVE_Sys;
 USE KAVE_Sys;
-/*DROP DATABASE KAVE_Sys;*/
 
 
 /*Tabla de Usuario*/
 CREATE TABLE Usuario (
 ID_Usuario VARCHAR(30),
--- Nombre VARCHAR(50) NOT NULL,
+Nombre VARCHAR(50) NOT NULL,
 -- ApellidoPaterno VARCHAR(50) NOT NULL,
 -- ApellidoMaterno VARCHAR(50) NOT NULL,
 -- CorreoElectronico VARCHAR(50) NOT NULL,
--- Tipo VARCHAR(50) NOT NULL,
+Tipo VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Usuario PRIMARY KEY(ID_Usuario) 
 );
 
@@ -137,3 +136,20 @@ CONSTRAINT PK_MateriaPrima PRIMARY KEY(ID_Inventario, ID_MateriaPrima, RFC_Prove
 CONSTRAINT FK_ProveedorMateriaPrima_MateriaPrima FOREIGN KEY(ID_MateriaPrima, ID_Inventario) REFERENCES MateriaPrima(ID_MateriaPrima, ID_Inventario),
 CONSTRAINT FK_ProveedorMateriaPrima_Proveedor FOREIGN KEY(RFC_Proveedor) REFERENCES Proveedor(RFC)
 );
+
+
+
+
+/*
+DROP DATABASE KAVE_Sys;
+
+USE KAVE_Sys;
+
+SELECT * FROM Usuario;
+SELECT * FROM Movimiento;
+
+TRUNCATE TABLE Movimiento;
+TRUNCATE TABLE Usuario;
+
+DELETE FROM Usuario WHERE Nombre = 'Gus';
+*/
