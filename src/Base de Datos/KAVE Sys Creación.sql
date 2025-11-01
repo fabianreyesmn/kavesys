@@ -152,4 +152,6 @@ TRUNCATE TABLE Movimiento;
 TRUNCATE TABLE Usuario;
 
 DELETE FROM Usuario WHERE Nombre = 'Gus';
+
+UPDATE Usuario SET Tipo = 'administrador' WHERE Nombre = 'Gus';
 */
