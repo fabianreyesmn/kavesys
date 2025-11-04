@@ -186,22 +186,244 @@ router.put('/actualizar_rol', verifyToken, async (req, res) => {
 });
 
 router.get('/catalogo', verifyToken, async (req, res) => {
-    console.log(`Usuario ${req.user.uid} está consultando el catálogo.`);
-    
-    try {
-        const sql = `SELECT inventario.ID_Inventario, Clave, Descripcion, Piezas, Precio, Existencias, inventario.ID_Categoria 
-                    FROM ProductoInventario inventario, ProductoFabricado fabricado
-                    WHERE fabricado.ID_Inventario = inventario.ID_Inventario 
-                    ORDER BY ROUND( SUBSTR(inventario.Id_Inventario, 3) ) ASC;`;
+  try {
+    const sql = `
+      SELECT 
+        i.ID_Inventario,
+        f.Clave,
+        i.Descripcion,
+        i.ID_Categoria,
+        f.Piezas,
+        f.Precio,
+        f.Existencias,
+        COALESCE(c.ExistenciasMinimas, 0) AS ExistenciasMinimas,
+        COALESCE(c.ExistenciasMaximas, 0) AS ExistenciasMaximas
+      FROM ProductoInventario i
+      LEFT JOIN ProductoFabricado f ON f.ID_Inventario = i.ID_Inventario
+      LEFT JOIN ConfiguracionProducto c ON c.ID_Inventario = i.ID_Inventario
+      ORDER BY CAST(SUBSTR(i.ID_Inventario, 3) AS UNSIGNED);
+    `;
 
-        const [rows] = await db.query(sql);
-        res.json(rows);
-    } 
-    catch(error) {
-        console.error('Error en la consulta: ', error);
-        res.status(500).json({ error: 'Error en la consulta' });
-    }
+    const [rows] = await db.query(sql);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error en la consulta:', error.sqlMessage || error.message);
+    res.status(500).json({ error: 'Error al obtener el catálogo' });
+  }
 });
+
+//altas
+router.post('/alta-producto', verifyToken, async (req, res) => {
+  try {
+    const {
+      Clave,
+      Descripcion,
+      ID_Categoria,
+      Piezas,
+      Precio,
+      Existencias,
+      ExistenciasMinimas,
+      ExistenciasMaximas
+    } = req.body;
+
+    if (!Clave || !Descripcion || !ID_Categoria) {
+      return res.status(400).json({ error: 'Clave, Descripción y Categoría son obligatorias' });
+    }
+
+    const [rows] = await db.query(`
+      SELECT ID_Inventario
+      FROM ProductoInventario
+      ORDER BY CAST(SUBSTR(ID_Inventario, 3) AS UNSIGNED) DESC
+      LIMIT 1;
+    `);
+
+    let nuevoID = 'PI001';
+    if (rows.length > 0) {
+      const ultimoNumero = parseInt(rows[0].ID_Inventario.substring(2)) + 1;
+      nuevoID = 'PI' + ultimoNumero;
+    }
+
+    await db.query(
+      `INSERT INTO ProductoInventario (ID_Inventario, Descripcion, ID_Categoria)
+       VALUES (?, ?, ?)`,
+      [nuevoID, Descripcion, ID_Categoria]
+    );
+
+    const configID = 'CP' + nuevoID.substring(2);
+    await db.query(
+      `INSERT INTO ConfiguracionProducto
+       (ID_ConfiguracionProducto, ID_Inventario, ExistenciasMinimas, ExistenciasMaximas)
+       VALUES (?, ?, ?, ?)`,
+      [configID, nuevoID, ExistenciasMinimas, ExistenciasMaximas]
+    );
+
+    await db.query(
+      `INSERT INTO ProductoFabricado (ID_Inventario, Clave, Piezas, Precio, Existencias)
+       VALUES (?, ?, ?, ?, ?)`,
+      [nuevoID, Clave, Piezas, Precio, Existencias]
+    );
+
+    res.status(201).json({
+      message: 'Producto agregado correctamente',
+      ID_Inventario: nuevoID
+    });
+
+  } catch (error) {
+    console.error('Error en /alta-producto:', error.sqlMessage || error.message);
+    res.status(500).json({ error: 'Error al registrar el producto' });
+  }
+});
+
+router.put('/actualizar-producto/:id', verifyToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const {
+      Descripcion,
+      ID_Categoria,
+      Precio,
+      Piezas,
+      Existencias,
+      ExistenciasMinimas,
+      ExistenciasMaximas
+    } = req.body;
+
+    await db.query(`
+      UPDATE ProductoInventario
+      SET Descripcion = ?, ID_Categoria = ?
+      WHERE ID_Inventario = ?;
+    `, [Descripcion, ID_Categoria, id]);
+
+    await db.query(`
+      UPDATE ProductoFabricado
+      SET Precio = ?, Piezas = ?, Existencias = ?
+      WHERE ID_Inventario = ?;
+    `, [Precio, Piezas, Existencias, id]);
+
+    await db.query(`
+      INSERT INTO ConfiguracionProducto (ID_ConfiguracionProducto, ID_Inventario, ExistenciasMinimas, ExistenciasMaximas)
+      VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        ExistenciasMinimas = VALUES(ExistenciasMinimas),
+        ExistenciasMaximas = VALUES(ExistenciasMaximas);
+    `, [
+      'CP' + id.substring(2),
+      id,
+      ExistenciasMinimas,
+      ExistenciasMaximas
+    ]);
+
+    res.json({ message: 'Producto actualizado correctamente' });
+  } catch (error) {
+    console.error('Error al actualizar producto:', error);
+    res.status(500).json({ error: 'Error al actualizar el producto' });
+  }
+});
+
+
+router.delete('/eliminar-producto/:id', verifyToken, async (req, res) => {
+  try {
+    const idInventario = req.params.id;
+
+    await db.query(`DELETE FROM ConfiguracionProducto WHERE ID_Inventario = ?`, [idInventario]);
+    await db.query(`DELETE FROM ProductoFabricado WHERE ID_Inventario = ?`, [idInventario]);
+    await db.query(`DELETE FROM ProductoInventario WHERE ID_Inventario = ?`, [idInventario]);
+
+    res.json({ message: 'Producto eliminado correctamente' });
+  } catch (error) {
+    console.error('Error en /eliminar-producto:', error.sqlMessage || error.message);
+    res.status(500).json({ error: 'Error al eliminar el producto' });
+  }
+});
+
+/* ===== APARTADO DE GESTION ===== */
+router.get('/gestion/productos', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        i.ID_Inventario AS id,
+        f.Clave AS code,
+        i.Descripcion AS description,
+        f.Existencias AS stock,
+        IF(f.Existencias > 0, 1, 0) AS active
+      FROM ProductoInventario i
+      LEFT JOIN ProductoFabricado f ON i.ID_Inventario = f.ID_Inventario
+      ORDER BY i.ID_Inventario ASC;
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error obteniendo productos:', error);
+    res.status(500).json({ error: 'Error al obtener productos.' });
+  }
+});
+
+/* ===== Registrar movimiento ===== */
+router.post('/gestion/movimiento', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.uid; // ✅ tomado directamente del token verificado
+    const { ID_Inventario, Fecha, TipoMovimiento, Cantidad } = req.body;
+
+    if (!ID_Inventario || !Fecha || !TipoMovimiento || !Cantidad) {
+      return res.status(400).json({ error: 'Datos incompletos.' });
+    }
+
+    // Generar ID automático del movimiento
+    const [rows] = await db.query('SELECT COUNT(*) AS total FROM Movimiento');
+    const nuevoId = 'MOV' + (rows[0].total + 1).toString().padStart(3, '0');
+
+    // Insertar el registro en la tabla Movimiento
+    await db.query(`
+      INSERT INTO Movimiento 
+      (ID_Movimiento, ID_Usuario, ID_Inventario, Fecha, TipoMovimiento, Cantidad)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [nuevoId, userId, ID_Inventario, Fecha, TipoMovimiento, Cantidad]
+    );
+
+    // Actualizar existencias en ProductoFabricado
+    const factor = TipoMovimiento.toLowerCase() === 'entrada' ? 1 : -1;
+    await db.query(`
+      UPDATE ProductoFabricado
+      SET Existencias = GREATEST(Existencias + (? * ?), 0)
+      WHERE ID_Inventario = ?`,
+      [factor, Cantidad, ID_Inventario]
+    );
+
+    res.status(201).json({
+      message: 'Movimiento registrado correctamente',
+      id: nuevoId
+    });
+
+  } catch (error) {
+    console.error('Error registrando movimiento:', error.sqlMessage || error.message);
+    res.status(500).json({ error: 'Error al registrar el movimiento.' });
+  }
+});
+
+
+/* ===== Últimos movimientos ===== */
+router.get('/gestion/movimientos', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        m.ID_Movimiento,
+        m.ID_Inventario,
+        i.Descripcion AS Producto,
+        m.Fecha,
+        m.TipoMovimiento AS Tipo,
+        m.Cantidad,
+        f.Existencias AS StockActual
+      FROM Movimiento m
+      LEFT JOIN ProductoInventario i ON m.ID_Inventario = i.ID_Inventario
+      LEFT JOIN ProductoFabricado f ON i.ID_Inventario = f.ID_Inventario
+      ORDER BY m.Fecha DESC, m.ID_Movimiento DESC
+      LIMIT 50;
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error obteniendo movimientos:', error);
+    res.status(500).json({ error: 'Error al obtener movimientos.' });
+  }
+});
+
 
 
 module.exports = router;
