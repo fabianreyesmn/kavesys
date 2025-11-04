@@ -185,6 +185,26 @@ router.put('/actualizar_rol', verifyToken, async (req, res) => {
     }
 });
 
+  const { getAuth } = require('firebase-admin/auth');
+
+  router.delete('/deleteUser/:id', verifyToken, async (req, res) => {
+    try {
+      const userId = req.params.id;
+
+      const [result] = await db.query('DELETE FROM Usuario WHERE ID_Usuario = ?', [userId]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Usuario no encontrado en la base de datos.' });
+      }
+
+      await getAuth().deleteUser(userId);
+
+      res.status(200).json({ message: 'Usuario eliminado correctamente.' });
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      res.status(500).json({ error: 'Error al eliminar usuario.' });
+    }
+  });
+
 router.get('/catalogo', verifyToken, async (req, res) => {
   try {
     const sql = `
@@ -410,20 +430,21 @@ router.get('/gestion/movimientos', verifyToken, async (req, res) => {
         m.Fecha,
         m.TipoMovimiento AS Tipo,
         m.Cantidad,
-        f.Existencias AS StockActual
+        f.Existencias AS StockActual,
+        u.Nombre AS NombreUsuario
       FROM Movimiento m
       LEFT JOIN ProductoInventario i ON m.ID_Inventario = i.ID_Inventario
       LEFT JOIN ProductoFabricado f ON i.ID_Inventario = f.ID_Inventario
+      LEFT JOIN Usuario u ON m.ID_Usuario = u.ID_Usuario
       ORDER BY m.Fecha DESC, m.ID_Movimiento DESC
       LIMIT 50;
     `);
+
     res.json(rows);
   } catch (error) {
     console.error('Error obteniendo movimientos:', error);
     res.status(500).json({ error: 'Error al obtener movimientos.' });
   }
 });
-
-
 
 module.exports = router;
