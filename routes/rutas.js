@@ -248,9 +248,17 @@ router.post('/alta-producto', verifyToken, async (req, res) => {
     } = req.body;
 
     if (!Clave || !Descripcion || !ID_Categoria) {
-      return res.status(400).json({ error: 'Clave, Descripción y Categoría son obligatorias' });
+      return res.status(400).json({ error: 'Clave, Descripción y Categoría son obligatorias.' });
     }
 
+    const [claveExistente] = await db.query(
+      `SELECT Clave FROM ProductoFabricado WHERE Clave = ?`,
+      [Clave]
+    );
+
+    if (claveExistente.length > 0) {
+      return res.status(400).json({ error: `La clave "${Clave}" ya existe en el sistema.` });
+    }
     const [rows] = await db.query(`
       SELECT ID_Inventario
       FROM ProductoInventario
@@ -291,7 +299,7 @@ router.post('/alta-producto', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error en /alta-producto:', error.sqlMessage || error.message);
-    res.status(500).json({ error: 'Error al registrar el producto' });
+    res.status(500).json({ error: 'Error al registrar el producto.' });
   }
 });
 
@@ -365,7 +373,7 @@ router.get('/gestion/productos', verifyToken, async (req, res) => {
         f.Clave AS code,
         i.Descripcion AS description,
         f.Existencias AS stock,
-        IF(f.Existencias > 0, 1, 0) AS active
+        1 AS active   -- 🔹 todos activos, incluso con stock = 0
       FROM ProductoInventario i
       LEFT JOIN ProductoFabricado f ON i.ID_Inventario = f.ID_Inventario
       ORDER BY i.ID_Inventario ASC;
@@ -380,45 +388,77 @@ router.get('/gestion/productos', verifyToken, async (req, res) => {
 /* ===== Registrar movimiento ===== */
 router.post('/gestion/movimiento', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.uid; // ✅ tomado directamente del token verificado
-    const { ID_Inventario, Fecha, TipoMovimiento, Cantidad } = req.body;
+    const userId = req.user.uid; // tomado del token Firebase
+    const { ID_Inventario, TipoMovimiento, Cantidad } = req.body;
 
-    if (!ID_Inventario || !Fecha || !TipoMovimiento || !Cantidad) {
+    if (!ID_Inventario || !TipoMovimiento || !Cantidad) {
       return res.status(400).json({ error: 'Datos incompletos.' });
     }
 
-    // Generar ID automático del movimiento
+    // === Verificar existencias actuales ===
+    const [stockRow] = await db.query(
+      `SELECT Existencias FROM ProductoFabricado WHERE ID_Inventario = ?`,
+      [ID_Inventario]
+    );
+
+    if (stockRow.length === 0)
+      return res.status(404).json({ error: 'Producto no encontrado.' });
+
+    const stockActual = stockRow[0].Existencias ?? 0;
+    const cantidadNum = Number(Cantidad);
+    let nuevoStock = stockActual;
+
+    // === Validar tipo ===
+    if (TipoMovimiento.toLowerCase() === 'entrada') {
+      nuevoStock += cantidadNum;
+    } else if (TipoMovimiento.toLowerCase() === 'salida') {
+      if (stockActual < cantidadNum) {
+        return res
+          .status(400)
+          .json({ error: 'Stock insuficiente para salida.' });
+      }
+      nuevoStock -= cantidadNum;
+    } else {
+      return res.status(400).json({ error: 'Tipo de movimiento no válido.' });
+    }
+
+    // === Generar nuevo ID ===
     const [rows] = await db.query('SELECT COUNT(*) AS total FROM Movimiento');
     const nuevoId = 'MOV' + (rows[0].total + 1).toString().padStart(3, '0');
 
-    // Insertar el registro en la tabla Movimiento
-    await db.query(`
+    // === Insertar el movimiento con la fecha del sistema ===
+    await db.query(
+      `
       INSERT INTO Movimiento 
       (ID_Movimiento, ID_Usuario, ID_Inventario, Fecha, TipoMovimiento, Cantidad)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [nuevoId, userId, ID_Inventario, Fecha, TipoMovimiento, Cantidad]
+      VALUES (?, ?, ?, NOW(), ?, ?)
+    `,
+      [nuevoId, userId, ID_Inventario, TipoMovimiento, cantidadNum]
     );
 
-    // Actualizar existencias en ProductoFabricado
-    const factor = TipoMovimiento.toLowerCase() === 'entrada' ? 1 : -1;
-    await db.query(`
-      UPDATE ProductoFabricado
-      SET Existencias = GREATEST(Existencias + (? * ?), 0)
-      WHERE ID_Inventario = ?`,
-      [factor, Cantidad, ID_Inventario]
+    // === Actualizar stock ===
+    await db.query(
+      `
+      UPDATE ProductoFabricado 
+      SET Existencias = ? 
+      WHERE ID_Inventario = ?
+    `,
+      [nuevoStock, ID_Inventario]
     );
 
     res.status(201).json({
-      message: 'Movimiento registrado correctamente',
-      id: nuevoId
+      message: `Movimiento de ${TipoMovimiento} registrado correctamente.`,
+      id: nuevoId,
+      stockActualizado: nuevoStock,
     });
-
   } catch (error) {
-    console.error('Error registrando movimiento:', error.sqlMessage || error.message);
+    console.error(
+      'Error registrando movimiento:',
+      error.sqlMessage || error.message
+    );
     res.status(500).json({ error: 'Error al registrar el movimiento.' });
   }
 });
-
 
 /* ===== Últimos movimientos ===== */
 router.get('/gestion/movimientos', verifyToken, async (req, res) => {
@@ -441,11 +481,23 @@ router.get('/gestion/movimientos', verifyToken, async (req, res) => {
       LIMIT 50;
     `);
 
-    res.json(rows);
+    const movimientos = rows.map((m) => ({
+      ID_Movimiento: m.ID_Movimiento,
+      ID_Inventario: m.ID_Inventario,
+      Producto: m.Producto,
+      Fecha: new Date(m.Fecha).toISOString(),
+      Tipo: m.Tipo,
+      Cantidad: m.Cantidad,
+      StockActual: m.StockActual,
+      NombreUsuario: m.NombreUsuario || '—',
+    }));
+
+    res.json(movimientos);
   } catch (error) {
     console.error('Error obteniendo movimientos:', error);
     res.status(500).json({ error: 'Error al obtener movimientos.' });
   }
 });
+
 
 module.exports = router;
