@@ -39,7 +39,7 @@ router.post('/enviar-contacto', async (req, res) => {
 
     const mailOptions = {
       from: `"Contacto Web - Plásticos KAVE" <plasticoskave@hotmail.com>`,
-      to: 'plasticoskave@hotmail.com',
+      to: 'plasticoskavesystem@gmail.com',
       subject: `📩 Nuevo mensaje de contacto - ${nombre}`,
       html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f7f9fb; padding:40px; color:#333;">
