@@ -13,6 +13,9 @@ $ npm install cors
 Instalación de Nodemailer:
 $ npm install nodemailer
 
+Instalación de Jest y Supertest:
+$ npm install --save-dev jest supertest
+
 Es necesario el siguiente archivo en la raíz: 
 serviceAccountKey.json
 
@@ -23,3 +26,9 @@ DB_PASSWORD=
 DB_NAME=
 DB_PORT=
 EMAIL_PASSWORD=
+
+Ejecutar proyecto:
+$ npm start
+
+Ejecutar pruebas:
+$ npm test

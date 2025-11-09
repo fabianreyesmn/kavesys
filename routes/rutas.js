@@ -206,7 +206,7 @@ router.put('/actualizar_rol', verifyToken, async (req, res) => {
     }
   });
 
-router.get('/catalogo', verifyToken, async (req, res) => {
+router.get('/catalogo', async (req, res) => {
   try {
     const sql = `
       SELECT 

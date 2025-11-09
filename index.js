@@ -16,6 +16,10 @@ app.use(bodyParser.urlencoded({ extended:false }));
 app.use(bodyParser.json());
 app.use('/', misrutas);
 
-app.listen(port, () => {
-    console.log(`Servidor en ejecución http://localhost:${port}`);
-})
+if(require.main === module) { //No iniciar el servidor cuando se realizan pruebas con supertest
+  app.listen(port, () => {
+      console.log(`Servidor en ejecución http://localhost:${port}`);
+  });
+}
+
+module.exports = app; //Exportar para supertest

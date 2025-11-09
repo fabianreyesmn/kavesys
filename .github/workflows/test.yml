@@ -5,7 +5,7 @@ on:
     branches: [main] #Dónde: Indica dónde se debe lanzar la GitHub Action, en este caso son las ramas donde se va a ejecutar
     
 jobs: #Conjunto se pasos a ejecutar en este GitHub Action
-  build: #Indica el proceso de construcción
+  build: #Indica el proceso de construcción, test
     runs-on: ubuntu-latest #Indica el tipo de máquina (sistema operativo) a correr esto, en este caso es la última versión de la máquina de Ubuntu que tenga disponible los servidores de GitHub
 
     steps: #Empezar a lanzar cada una de las Actions que serán capaces de ejecutar el código
@@ -13,7 +13,7 @@ jobs: #Conjunto se pasos a ejecutar en este GitHub Action
         uses: actions/checkout@v4 #Obtener el código del repositorio, qué va a usar, qué se va a necesitar para poder obtener el código del repositorio
       
       - name: Setup Node 
-        uses: actions/setup-node@v6 #Configurar Node.js
+        uses: actions/setup-node@v4 #Configurar Node.js
         with: 
           node-version: '20' #Indica la versión a utilizar de Node
 
@@ -22,5 +22,3 @@ jobs: #Conjunto se pasos a ejecutar en este GitHub Action
       
       - name: Run Script 
         run: npm test #Correr el script
-
-        
