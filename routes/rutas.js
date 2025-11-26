@@ -388,74 +388,156 @@ router.get('/gestion/productos', verifyToken, async (req, res) => {
 /* ===== Registrar movimiento ===== */
 router.post('/gestion/movimiento', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.uid; // tomado del token Firebase
+    const userId = req.user.uid;
     const { ID_Inventario, TipoMovimiento, Cantidad } = req.body;
 
     if (!ID_Inventario || !TipoMovimiento || !Cantidad) {
       return res.status(400).json({ error: 'Datos incompletos.' });
     }
 
-    // === Verificar existencias actuales ===
-    const [stockRow] = await db.query(
-      `SELECT Existencias FROM ProductoFabricado WHERE ID_Inventario = ?`,
+    const [productDetails] = await db.query(
+      `SELECT
+         f.Existencias,
+         c.ExistenciasMinimas,
+         c.ExistenciasMaximas,
+         i.Descripcion,
+         f.Clave
+       FROM ProductoFabricado f
+       LEFT JOIN ConfiguracionProducto c ON f.ID_Inventario = c.ID_Inventario
+       LEFT JOIN ProductoInventario i ON f.ID_Inventario = i.ID_Inventario
+       WHERE f.ID_Inventario = ?`,
       [ID_Inventario]
     );
 
-    if (stockRow.length === 0)
+    if (productDetails.length === 0) {
       return res.status(404).json({ error: 'Producto no encontrado.' });
+    }
 
-    const stockActual = stockRow[0].Existencias ?? 0;
+    const {
+      Existencias: stockActual,
+      ExistenciasMinimas,
+      ExistenciasMaximas,
+      Descripcion,
+      Clave,
+    } = productDetails[0];
+
     const cantidadNum = Number(Cantidad);
     let nuevoStock = stockActual;
 
-    // === Validar tipo ===
     if (TipoMovimiento.toLowerCase() === 'entrada') {
       nuevoStock += cantidadNum;
-    } else if (TipoMovimiento.toLowerCase() === 'salida') {
+    } 
+    else if (TipoMovimiento.toLowerCase() === 'salida') {
       if (stockActual < cantidadNum) {
-        return res
-          .status(400)
-          .json({ error: 'Stock insuficiente para salida.' });
+        return res.status(400).json({ error: 'Stock insuficiente para salida.' });
       }
       nuevoStock -= cantidadNum;
     } else {
       return res.status(400).json({ error: 'Tipo de movimiento no válido.' });
     }
 
-    // === Generar nuevo ID ===
     const [rows] = await db.query('SELECT COUNT(*) AS total FROM Movimiento');
     const nuevoId = 'MOV' + (rows[0].total + 1).toString().padStart(3, '0');
 
-    // === Insertar el movimiento con la fecha del sistema ===
     await db.query(
-      `
-      INSERT INTO Movimiento 
-      (ID_Movimiento, ID_Usuario, ID_Inventario, Fecha, TipoMovimiento, Cantidad)
-      VALUES (?, ?, ?, NOW(), ?, ?)
-    `,
+      `INSERT INTO Movimiento (ID_Movimiento, ID_Usuario, ID_Inventario, Fecha, TipoMovimiento, Cantidad)
+       VALUES (?, ?, ?, NOW(), ?, ?)`,
       [nuevoId, userId, ID_Inventario, TipoMovimiento, cantidadNum]
     );
 
-    // === Actualizar stock ===
     await db.query(
-      `
-      UPDATE ProductoFabricado 
-      SET Existencias = ? 
-      WHERE ID_Inventario = ?
-    `,
+      `UPDATE ProductoFabricado SET Existencias = ? WHERE ID_Inventario = ?`,
       [nuevoStock, ID_Inventario]
     );
 
+    // === Lógica de notificación por correo ===
+    let alertaEnviada = false;
+    if (ExistenciasMinimas != null && ExistenciasMaximas != null) {
+      const umbralCruzado =
+        (stockActual >= ExistenciasMinimas && nuevoStock < ExistenciasMinimas) ||
+        (stockActual <= ExistenciasMaximas && nuevoStock > ExistenciasMaximas);
+
+      if (umbralCruzado) {
+        let emailSubject = '';
+        let emailTitle = '';
+        let limitLabel = '';
+        let limitValue = 0;
+        let headerColor = '#6c757d';
+
+        if (nuevoStock < ExistenciasMinimas) {
+          emailSubject = `⚠️ Alerta de Bajo Stock: ${Descripcion}`;
+          emailTitle = 'Alerta de Desabasto';
+          limitLabel = 'Stock Mínimo';
+          limitValue = ExistenciasMinimas;
+          headerColor = '#dc3545'; // Rojo
+        } 
+        else { // nuevoStock > ExistenciasMaximas
+          emailSubject = `📈 Alerta de Excedente de Stock: ${Descripcion}`;
+          emailTitle = 'Alerta de Sobreproducción';
+          limitLabel = 'Stock Máximo';
+          limitValue = ExistenciasMaximas;
+          headerColor = '#ffc107'; //Amarillo
+        }
+        
+        const emailBody = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f7f9fb; padding:40px; color:#333;">
+            <div style="max-width:600px; margin:auto; background:#fff; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1); overflow:hidden;">
+              <div style="background:${headerColor}; color:#fff; padding:20px; text-align:center;">
+                <h2 style="margin:0;">KAVE Sys - Alertas de Inventario</h2>
+              </div>
+              <div style="padding:30px;">
+                <h3 style="color:${headerColor}; margin-bottom:20px;">${emailTitle}</h3>
+                <p>El producto <strong>${Descripcion} (Clave: ${Clave})</strong> ha cruzado un umbral de existencias.</p>
+                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding:10px; font-weight:600;">Stock Actual:</td>
+                    <td style="padding:10px; font-size:1.2em; font-weight:bold;">${nuevoStock}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px; font-weight:600;">${limitLabel}:</td>
+                    <td style="padding:10px;">${limitValue}</td>
+                  </tr>
+                </table>
+              </div>
+              <div style="background:#f1f3f5; color:#6c757d; text-align:center; padding:10px; font-size:0.85rem;">
+                © ${new Date().getFullYear()} Plásticos KAVE S.A. de C.V.
+              </div>
+            </div>
+          </div>
+        `;
+
+        try {
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: 'plasticoskavesystem@gmail.com',
+              pass: process.env.EMAIL_PASSWORD,
+            },
+          });
+
+          await transporter.sendMail({
+            from: '"KAVE Sys - Alertas" <plasticoskavesystem@gmail.com>',
+            to: 'plasticoskavesystem@gmail.com',
+            subject: emailSubject,
+            html: emailBody,
+          });
+          console.log(`Correo de alerta de inventario enviado para ${ID_Inventario}.`);
+          alertaEnviada = true;
+        } catch (emailError) {
+          console.error('Error al enviar correo de alerta:', emailError);
+        }
+      }
+    }
+    // === Fin de la lógica de correo ===
+
     res.status(201).json({
-      message: `Movimiento de ${TipoMovimiento} registrado correctamente.`,
+      message: `Movimiento de ${TipoMovimiento} registrado. ${alertaEnviada ? 'Se envió una alerta por correo.' : ''}`.trim(),
       id: nuevoId,
       stockActualizado: nuevoStock,
     });
-  } catch (error) {
-    console.error(
-      'Error registrando movimiento:',
-      error.sqlMessage || error.message
-    );
+  } 
+  catch(error) {
+    console.error('Error registrando movimiento:', error.sqlMessage || error.message);
     res.status(500).json({ error: 'Error al registrar el movimiento.' });
   }
 });
@@ -493,7 +575,8 @@ router.get('/gestion/movimientos', verifyToken, async (req, res) => {
     }));
 
     res.json(movimientos);
-  } catch (error) {
+  } 
+  catch(error) {
     console.error('Error obteniendo movimientos:', error);
     res.status(500).json({ error: 'Error al obtener movimientos.' });
   }
