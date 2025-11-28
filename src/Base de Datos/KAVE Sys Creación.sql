@@ -92,7 +92,7 @@ CONSTRAINT FK_Localidad_Municipio FOREIGN KEY(ID_Municipio) REFERENCES Municipio
 
 /*Tabla de Proveedor*/
 CREATE TABLE Proveedor (
-RFC VARCHAR(12),
+RFC VARCHAR(13),
 RazonSocial VARCHAR(50) NOT NULL,
 Telefono VARCHAR(20) NOT NULL,
 CorreoElectronico VARCHAR(50) NOT NULL,
@@ -100,9 +100,7 @@ Calle VARCHAR(50) NOT NULL,
 Numero INT NOT NULL,
 Fraccionamiento VARCHAR(50) NOT NULL,
 CodigoPostal INT NOT NULL,
-ID_Localidad VARCHAR(10) NOT NULL,
-CONSTRAINT PK_Proveedor PRIMARY KEY(RFC),
-CONSTRAINT FK_Proveedor_Localidad FOREIGN KEY(ID_Localidad) REFERENCES Localidad(ID_Localidad)
+CONSTRAINT PK_Proveedor PRIMARY KEY(RFC)
 );
 
 
