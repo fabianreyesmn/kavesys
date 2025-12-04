@@ -72,6 +72,8 @@ INSERT INTO Categoria(ID_Categoria, Nombre) VALUES ('RB', 'Reducción Bushing');
 
 INSERT INTO Categoria(ID_Categoria, Nombre) VALUES ('CT', 'Contratuerca');
 
+INSERT INTO Categoria(ID_Categoria, Nombre) VALUES ('MP', 'Materia Prima');
+
 SELECT * FROM Categoria;
 /*DELETE FROM Categoria;*/
 

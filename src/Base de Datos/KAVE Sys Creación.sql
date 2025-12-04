@@ -24,7 +24,7 @@ CONSTRAINT FK_Categoria_Categoria FOREIGN KEY (ID_CategoriaPadre) REFERENCES Cat
 
 /*Tabla Producto del Inventario*/
 CREATE TABLE ProductoInventario (
-ID_Inventario VARCHAR(10),
+ID_Inventario VARCHAR(10), 
 Descripcion VARCHAR(50) NOT NULL,
 ID_Categoria VARCHAR(10) NOT NULL,
 CONSTRAINT PK_ProductoInventario PRIMARY KEY(ID_Inventario),
@@ -44,7 +44,7 @@ CONSTRAINT FK_ConfiguracionProducto_ProductoInventario FOREIGN KEY(ID_Inventario
 /*Tabla de Movimiento*/
 CREATE TABLE Movimiento (
 ID_Movimiento VARCHAR(10),
-ID_Usuario VARCHAR(10),
+ID_Usuario VARCHAR(30),
 ID_Inventario VARCHAR(10),
 Fecha DATE NOT NULL,
 TipoMovimiento VARCHAR(10) NOT NULL,
@@ -57,37 +57,48 @@ CONSTRAINT FK_Movimiento_Inventario FOREIGN KEY(ID_Inventario) REFERENCES Produc
 
 
 /*Tabla de País*/
-CREATE TABLE Pais (
+/*CREATE TABLE Pais (
 ID_Pais VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Pais PRIMARY KEY(ID_Pais)
-);
+);*/
 
 /*Tabla de Estado*/
-CREATE TABLE Estado (
+/*CREATE TABLE Estado (
 ID_Estado VARCHAR(10),
 ID_Pais VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Estado PRIMARY KEY(ID_Estado),
 CONSTRAINT FK_Estado_Pais FOREIGN KEY(ID_Pais) REFERENCES Pais(ID_Pais)
-);
+);*/
 
 /*Tabla de Municipio*/
-CREATE TABLE Municipio (
+/*CREATE TABLE Municipio (
 ID_Municipio VARCHAR(10),
 ID_Estado VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Municipio PRIMARY KEY(ID_Municipio),
 CONSTRAINT FK_Municipio_Estado FOREIGN KEY(ID_Estado) REFERENCES Estado(ID_Estado)
-);
+);*/
 
 /*Tabla de Localidad*/
-CREATE TABLE Localidad (
+/*CREATE TABLE Localidad (
 ID_Localidad VARCHAR(10),
 ID_Municipio VARCHAR(10),
 Nombre VARCHAR(50) NOT NULL,
 CONSTRAINT PK_Localidad PRIMARY KEY(ID_Localidad),
 CONSTRAINT FK_Localidad_Municipio FOREIGN KEY(ID_Municipio) REFERENCES Municipio(ID_Municipio)
+);*/
+
+CREATE TABLE Direccion (
+ID_Direccion VARCHAR(10),
+Calle VARCHAR(120) NOT NULL,
+Numero INT NOT NULL,
+Fraccionamiento VARCHAR(100) NOT NULL,
+CodigoPostal INT NOT NULL,
+Municipio VARCHAR(50) NOT NULL,
+Estado VARCHAR(30) NOT NULL,
+CONSTRAINT PK_Direccion PRIMARY KEY(ID_Direccion)
 );
 
 /*Tabla de Proveedor*/
@@ -96,11 +107,15 @@ RFC VARCHAR(13),
 RazonSocial VARCHAR(50) NOT NULL,
 Telefono VARCHAR(20) NOT NULL,
 CorreoElectronico VARCHAR(50) NOT NULL,
-Calle VARCHAR(50) NOT NULL,
+ID_Direccion VARCHAR(10),
+/*Calle VARCHAR(50) NOT NULL,
 Numero INT NOT NULL,
 Fraccionamiento VARCHAR(50) NOT NULL,
 CodigoPostal INT NOT NULL,
-CONSTRAINT PK_Proveedor PRIMARY KEY(RFC)
+ID_Localidad VARCHAR(10) NOT NULL,
+CONSTRAINT FK_Proveedor_Localidad FOREIGN KEY(ID_Localidad) REFERENCES Localidad(ID_Localidad)*/
+CONSTRAINT PK_Proveedor PRIMARY KEY(RFC),
+CONSTRAINT FK_Proveedor_Direccion FOREIGN KEY(ID_Direccion) REFERENCES Direccion(ID_Direccion)
 );
 
 
@@ -117,21 +132,21 @@ CONSTRAINT FK_ProductoInventario_Inventario FOREIGN KEY(ID_Inventario) REFERENCE
 
 /*Tabla de Materia Prima*/
 CREATE TABLE MateriaPrima (
-ID_MateriaPrima VARCHAR(10),
+Clave VARCHAR(10), /*ID_MateriaPrima*/
 ID_Inventario VARCHAR(10),
-CONSTRAINT PK_MateriaPrima PRIMARY KEY(ID_MateriaPrima, ID_Inventario),
+CONSTRAINT PK_MateriaPrima PRIMARY KEY(Clave, ID_Inventario),
 CONSTRAINT FK_MateriaPrima_Inventario FOREIGN KEY(ID_Inventario) REFERENCES ProductoInventario(ID_Inventario)
 );
 
 /*Tabla de Proveedor_MateriaPrima*/
 CREATE TABLE Proveedor_MateriaPrima (
 ID_Inventario VARCHAR(10),
-ID_MateriaPrima VARCHAR(10),
-RFC_Proveedor VARCHAR(12),
+Clave VARCHAR(10), /*ID_MateriaPrima*/
+RFC_Proveedor VARCHAR(13),
 Costo INT NOT NULL,
 Existencias INT NOT NULL,
-CONSTRAINT PK_MateriaPrima PRIMARY KEY(ID_Inventario, ID_MateriaPrima, RFC_Proveedor),
-CONSTRAINT FK_ProveedorMateriaPrima_MateriaPrima FOREIGN KEY(ID_MateriaPrima, ID_Inventario) REFERENCES MateriaPrima(ID_MateriaPrima, ID_Inventario),
+CONSTRAINT PK_MateriaPrima PRIMARY KEY(ID_Inventario, Clave, RFC_Proveedor),
+CONSTRAINT FK_ProveedorMateriaPrima_MateriaPrima FOREIGN KEY(Clave, ID_Inventario) REFERENCES MateriaPrima(Clave, ID_Inventario),
 CONSTRAINT FK_ProveedorMateriaPrima_Proveedor FOREIGN KEY(RFC_Proveedor) REFERENCES Proveedor(RFC)
 );
 
@@ -145,6 +160,8 @@ USE KAVE_Sys;
 
 SELECT * FROM Usuario;
 SELECT * FROM Movimiento;
+SELECT * FROM Proveedor_MateriaPrima;
+SELECT * FROM Proveedor;
 
 TRUNCATE TABLE Movimiento;
 TRUNCATE TABLE Usuario;
@@ -152,4 +169,5 @@ TRUNCATE TABLE Usuario;
 DELETE FROM Usuario WHERE Nombre = 'Gus';
 
 UPDATE Usuario SET Tipo = 'administrador' WHERE Nombre = 'Gus';
+UPDATE Usuario SET Tipo = 'produccion' WHERE Nombre = 'Fabian';
 */
