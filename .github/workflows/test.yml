@@ -7,6 +7,15 @@ on:
 jobs: #Conjunto se pasos a ejecutar en este GitHub Action
   build: #Indica el proceso de construcción, test
     runs-on: ubuntu-latest #Indica el tipo de máquina (sistema operativo) a correr esto, en este caso es la última versión de la máquina de Ubuntu que tenga disponible los servidores de GitHub
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps: #Empezar a lanzar cada una de las Actions que serán capaces de ejecutar el código
       - name: Checkout Repositorio #Nombre del GitHub Action
@@ -22,3 +31,9 @@ jobs: #Conjunto se pasos a ejecutar en este GitHub Action
       
       - name: Run Script 
         run: npm test #Correr el script
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: test_db
+          DB_PORT: 3306
