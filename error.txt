@@ -6,13 +6,8 @@ Run npm test
 FAIL test/test.js
   ● Test suite failed to run
 
-    Cannot find module '../serviceAccountKey.json' from 'middleware/auth.js'
-
-    Require stack:
-      middleware/auth.js
-      routes/rutas.js
-      index.js
-      test/test.js
+    SyntaxError: Unexpected end of JSON input
+        at JSON.parse (<anonymous>)
 
       2 | const admin = require('firebase-admin');
       3 |
@@ -22,7 +17,7 @@ FAIL test/test.js
       6 | if(!admin.apps.length) {
       7 |     admin.initializeApp({
 
-      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:863:11)
+      at Runtime._loadModule (node_modules/jest-runtime/build/index.js:938:59)
       at Object.require (middleware/auth.js:4:24)
       at Object.require (routes/rutas.js:4:25)
       at Object.require (index.js:3:18)
@@ -31,7 +26,7 @@ FAIL test/test.js
 Test Suites: 1 failed, 1 total
 Tests:       0 total
 Snapshots:   0 total
-Time:        0.722 s
+Time:        0.737 s
 Ran all test suites.
 
 ReferenceError: You are trying to `import` a file after the Jest environment has been torn down. From test/test.js.
@@ -50,15 +45,15 @@ ReferenceError: You are trying to `import` a file after the Jest environment has
   console.error
     Error de conexión a la base de datos:  Encoding not recognized: 'cesu8' (searched as: 'cesu8')
 
-      11 | });
-      12 |
-    > 13 | connection.connect((err) => {
+      12 | });
+      13 |
+    > 14 | connection.connect((err) => {
          |             ^
-      14 |     if(err) {
-      15 |         console.error("Error de conexión a la base de datos: ", err.message);
-      16 |         return;
+      15 |     if(err) {
+      16 |         console.error("Error de conexión a la base de datos: ", err.message);
+      17 |         return;
 
-      at db.js:13:13
+      at db.js:14:13
       at Connection.<anonymous> (node_modules/mysql2/lib/base/connection.js:818:13)
       at Connection._notifyError (node_modules/mysql2/lib/base/connection.js:247:12)
       at Connection._handleFatalError (node_modules/mysql2/lib/base/connection.js:178:10)

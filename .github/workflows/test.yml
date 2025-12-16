@@ -27,7 +27,14 @@ jobs: #Conjunto se pasos a ejecutar en este GitHub Action
           node-version: '20' #Indica la versión a utilizar de Node
 
       - name: Crear archivo serviceAccountKey.json de Firebase
-        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > serviceAccountKey.json
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          if [ -z "$FIREBASE_KEY" ]; then
+            echo "El secret FIREBASE_SERVICE_ACCOUNT_KEY no está configurado."
+            exit 1
+          fi
+          echo "$FIREBASE_KEY" > serviceAccountKey.json
         shell: bash
 
       - name: Instalar Dependencias
