@@ -1,0 +1,70 @@
+Run npm test
+
+> kave_sys@1.0.0 test
+> jest
+
+FAIL test/test.js
+  ● Test suite failed to run
+
+    Cannot find module '../serviceAccountKey.json' from 'middleware/auth.js'
+
+    Require stack:
+      middleware/auth.js
+      routes/rutas.js
+      index.js
+      test/test.js
+
+      2 | const admin = require('firebase-admin');
+      3 |
+    > 4 | const serviceAccount = require('../serviceAccountKey.json'); //Clave privada de servicio de Firebase: Configuración de proyecto > Cuentas de servicio > Generar nueva clave privada
+        |                        ^
+      5 |
+      6 | if(!admin.apps.length) {
+      7 |     admin.initializeApp({
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:863:11)
+      at Object.require (middleware/auth.js:4:24)
+      at Object.require (routes/rutas.js:4:25)
+      at Object.require (index.js:3:18)
+      at Object.require (test/test.js:2:13)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.722 s
+Ran all test suites.
+
+ReferenceError: You are trying to `import` a file after the Jest environment has been torn down. From test/test.js.
+
+      at Object.getCodec (node_modules/iconv-lite/lib/index.js:66:15)
+      at Object.getDecoder (node_modules/iconv-lite/lib/index.js:129:21)
+      at Object.exports.decode (node_modules/mysql2/lib/parsers/string.js:20:23)
+      at Packet.readNullTerminatedString (node_modules/mysql2/lib/packets/packet.js:414:25)
+      at Function.fromPacket (node_modules/mysql2/lib/packets/handshake.js:62:33)
+      at ClientHandshake.handshakeInit (node_modules/mysql2/lib/commands/client_handshake.js:112:40)
+      at ClientHandshake.execute (node_modules/mysql2/lib/commands/command.js:45:22)
+      at Connection.handlePacket (node_modules/mysql2/lib/base/connection.js:477:34)
+      at PacketParser.onPacket (node_modules/mysql2/lib/base/connection.js:93:12)
+      at PacketParser.executeStart (node_modules/mysql2/lib/packet_parser.js:75:16)
+      at Socket.<anonymous> (node_modules/mysql2/lib/base/connection.js:100:25)
+  console.error
+    Error de conexión a la base de datos:  Encoding not recognized: 'cesu8' (searched as: 'cesu8')
+
+      11 | });
+      12 |
+    > 13 | connection.connect((err) => {
+         |             ^
+      14 |     if(err) {
+      15 |         console.error("Error de conexión a la base de datos: ", err.message);
+      16 |         return;
+
+      at db.js:13:13
+      at Connection.<anonymous> (node_modules/mysql2/lib/base/connection.js:818:13)
+      at Connection._notifyError (node_modules/mysql2/lib/base/connection.js:247:12)
+      at Connection._handleFatalError (node_modules/mysql2/lib/base/connection.js:178:10)
+      at Connection.handlePacket (node_modules/mysql2/lib/base/connection.js:487:12)
+      at PacketParser.onPacket (node_modules/mysql2/lib/base/connection.js:93:12)
+      at PacketParser.executeStart (node_modules/mysql2/lib/packet_parser.js:75:16)
+      at Socket.<anonymous> (node_modules/mysql2/lib/base/connection.js:100:25)
+
+Error: Process completed with exit code 1.
